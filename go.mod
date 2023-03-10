@@ -1,4 +1,4 @@
-module github.com/consolelabs/social-payment-api
+module github.com/consolelabs/mochi-pay-api
 
 go 1.18
 

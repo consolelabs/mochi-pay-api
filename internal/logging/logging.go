@@ -21,7 +21,7 @@ import (
 	stackdriver "github.com/TV4/logrus-stackdriver-formatter"
 	"github.com/sirupsen/logrus"
 
-	"github.com/consolelabs/social-payment-api/internal/config"
+	"github.com/consolelabs/mochi-pay-api/internal/config"
 )
 
 // ConfigureLogging sets up open match logrus instance using the logging section of the matchmaker_config.json

@@ -9,13 +9,13 @@ import (
 
 	"github.com/sirupsen/logrus"
 
-	"github.com/consolelabs/social-payment-api/internal/config"
-	"github.com/consolelabs/social-payment-api/internal/logging"
+	"github.com/consolelabs/mochi-pay-api/internal/config"
+	"github.com/consolelabs/mochi-pay-api/internal/logging"
 )
 
 var (
 	logger = logrus.WithFields(logrus.Fields{
-		"app":       "social-payment-api",
+		"app":       "mochi-pay-api",
 		"component": "app.main",
 	})
 )

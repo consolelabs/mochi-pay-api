@@ -1,1 +1,1 @@
-# social-payment-api
+# mochi-pay-api

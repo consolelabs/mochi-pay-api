@@ -3,7 +3,7 @@ package api
 import (
 	"net/http"
 
-	"github.com/consolelabs/social-payment-api/internal/appmain"
+	"github.com/consolelabs/mochi-pay-api/internal/appmain"
 )
 
 // BindService creates the backend service and binds it to the serving harness
