@@ -1,0 +1,27 @@
+version: "3"
+services:
+  postgres:
+    image: postgres:11
+    restart: always
+    environment:
+      POSTGRES_DB: mochi_pay_api_local
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    container_name: mochi_pay_api_local
+    ports:
+      - 55432:5432
+    expose:
+      - 55432
+
+  postgres_test:
+    image: postgres:11
+    restart: always
+    environment:
+      POSTGRES_DB: mochi_pay_api_test
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    container_name: mochi_pay_api_test
+    ports:
+      - 55433:5432
+    expose:
+      - 55433

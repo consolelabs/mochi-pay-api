@@ -3,15 +3,17 @@ package api
 import (
 	"strings"
 
+	"github.com/consolelabs/mochi-pay-api/internal/app/api/handler"
+	"github.com/consolelabs/mochi-pay-api/internal/appmain"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 )
 
-func setupRouter() *gin.Engine {
+func setupRouter(p *appmain.Params, h *handler.Handler) *gin.Engine {
 	r := gin.New()
 
 	r.Use(
-		gin.LoggerWithWriter(gin.DefaultWriter, "/healthz"),
+		gin.LoggerWithWriter(p.Logger().Writer(), "/healthz"),
 		gin.Recovery(),
 	)
 
@@ -50,6 +52,15 @@ func setupRouter() *gin.Engine {
 	r.GET("/healthz", func(ctx *gin.Context) {
 		ctx.JSON(200, gin.H{"status": "ok"})
 	})
+
+	// payment group
+	r.POST("/api/v1/transfer", h.Transfer.Transfer)
+	r.GET("/api/v1/mochi-wallet", nil)
+	r.POST("/api/v1/mochi-wallet/deposit", nil)
+	r.POST("/api/v1/mochi-wallet/withdraw", nil)
+
+	//
+	// r.GET("/api/v1/mochi-wallet/transactions", nil)
 
 	return r
 }
