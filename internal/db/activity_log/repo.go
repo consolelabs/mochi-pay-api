@@ -1,4 +1,4 @@
-package token
+package activitylog
 
 import (
 	"gorm.io/gorm"
@@ -16,6 +16,6 @@ func New(db *gorm.DB) Store {
 	}
 }
 
-func (p *pg) GetBySymbol(symbol string) (token *model.Token, err error) {
-	return token, p.db.Where("symbol ILIKE ?", symbol).First(&token).Error
+func (p *pg) CreateActivityLog(al *model.ActivityLog) error {
+	return p.db.Create(al).Error
 }

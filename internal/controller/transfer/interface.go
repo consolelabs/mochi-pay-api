@@ -1,4 +1,4 @@
-package nftsaleentity
+package transfer
 
 import "github.com/consolelabs/mochi-pay-api/internal/model"
 

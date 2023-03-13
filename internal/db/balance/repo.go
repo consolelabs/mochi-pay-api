@@ -7,22 +7,22 @@ import (
 	"github.com/consolelabs/mochi-pay-api/internal/model"
 )
 
-type store struct {
+type pg struct {
 	db *gorm.DB
 }
 
-func New(db *gorm.DB) IBalance {
-	return &store{
+func New(db *gorm.DB) Store {
+	return &pg{
 		db: db,
 	}
 }
 
-func (s *store) GetBalanceByTokenID(profileId string, tokenId string) (balance *model.Balance, err error) {
-	return balance, s.db.First(&balance, "profile_id = ? AND token_id = ?", profileId, tokenId).Error
+func (p *pg) GetBalanceByTokenID(profileId string, tokenId string) (balance *model.Balance, err error) {
+	return balance, p.db.First(&balance, "profile_id = ? AND token_id = ?", profileId, tokenId).Error
 }
 
-func (s *store) UpsertBatch(list []model.Balance) error {
-	tx := s.db.Begin()
+func (p *pg) UpsertBatch(list []model.Balance) error {
+	tx := p.db.Begin()
 	for i, item := range list {
 		err := tx.Clauses(
 			clause.OnConflict{

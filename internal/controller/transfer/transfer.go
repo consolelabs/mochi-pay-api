@@ -1,4 +1,4 @@
-package nftsaleentity
+package transfer
 
 import (
 	"strconv"
@@ -8,23 +8,20 @@ import (
 
 	"github.com/consolelabs/mochi-pay-api/internal/apperror/apierror"
 	"github.com/consolelabs/mochi-pay-api/internal/appmain"
-	"github.com/consolelabs/mochi-pay-api/internal/db"
 	"github.com/consolelabs/mochi-pay-api/internal/model"
 )
 
-type transferEntity struct {
-	db     *db.Store
+type transfer struct {
 	params *appmain.Params
 }
 
-func New(p *appmain.Params, db *db.Store) ITransfer {
-	return &transferEntity{
-		db:     db,
+func New(p *appmain.Params) ITransfer {
+	return &transfer{
 		params: p,
 	}
 }
 
-func (t *transferEntity) TransferToken(req *model.TransferRequest) error {
+func (t *transfer) TransferToken(req *model.TransferRequest) error {
 	listReceivers := make([]string, 0)
 	for _, to := range req.Tos {
 		listReceivers = append(listReceivers, to.ProfileGlobalId)
@@ -46,27 +43,27 @@ func (t *transferEntity) TransferToken(req *model.TransferRequest) error {
 	}
 
 	// check if token existed
-	token, err := t.db.Token.GetBySymbol(req.Token.Symbol)
+	token, err := t.params.DB().Token.GetBySymbol(req.Token.Symbol)
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
-			t.db.ActivityLog.CreateActivityLog(log)
+			t.params.DB().ActivityLog.CreateActivityLog(log)
 			return apierror.ErrTokenNotSupport
 		}
-		t.params.Logger().WithFields(logrus.Fields{"req": req}).Error(err, "[transferEntity.TransferToken] - failed to get token")
+		t.params.Logger().WithFields(logrus.Fields{"req": req}).Error(err, "[transferController.TransferToken] - failed to get token")
 		return err
 	}
 
 	// check sender's balance
-	senderBalance, err := t.db.Balance.GetBalanceByTokenID(req.From.ProfileGlobalId, token.Id)
+	senderBalance, err := t.params.DB().Balance.GetBalanceByTokenID(req.From.ProfileGlobalId, token.Id)
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
 			insufficientLog := log
 			insufficientLog.Note = apierror.ErrInsufficientBalance.Error()
 			insufficientLog.TokenId = token.Id
-			t.db.ActivityLog.CreateActivityLog(log)
+			t.params.DB().ActivityLog.CreateActivityLog(log)
 			return apierror.ErrInsufficientBalance
 		}
-		t.params.Logger().WithFields(logrus.Fields{"req": req}).Error(err, "[transferEntity.TransferToken] - failed to get sender balance")
+		t.params.Logger().WithFields(logrus.Fields{"req": req}).Error(err, "[transferController.TransferToken] - failed to get sender balance")
 		return err
 	}
 
@@ -74,7 +71,7 @@ func (t *transferEntity) TransferToken(req *model.TransferRequest) error {
 		insufficientLog := log
 		insufficientLog.Note = apierror.ErrInsufficientBalance.Error()
 		insufficientLog.TokenId = token.Id
-		t.db.ActivityLog.CreateActivityLog(log)
+		t.params.DB().ActivityLog.CreateActivityLog(log)
 		return apierror.ErrInsufficientBalance
 	}
 
@@ -90,16 +87,16 @@ func (t *transferEntity) TransferToken(req *model.TransferRequest) error {
 		})
 	}
 
-	err = t.db.Balance.UpsertBatch(batch)
+	err = t.params.DB().Balance.UpsertBatch(batch)
 	if err != nil {
-		t.params.Logger().WithFields(logrus.Fields{"req": req}).Error(err, "[transferEntity.TransferToken] - failed to upsert balance")
+		t.params.Logger().WithFields(logrus.Fields{"req": req}).Error(err, "[transferController.TransferToken] - failed to upsert balance")
 		return err
 	}
 	log.Status = "success"
 	log.Note = "transfer success"
-	err = t.db.ActivityLog.CreateActivityLog(log)
+	err = t.params.DB().ActivityLog.CreateActivityLog(log)
 	if err != nil {
-		t.params.Logger().WithFields(logrus.Fields{"req": req}).Error(err, "[transferEntity.TransferToken] - failed to create activity log")
+		t.params.Logger().WithFields(logrus.Fields{"req": req}).Error(err, "[transferController.TransferToken] - failed to create activity log")
 		return err
 	}
 

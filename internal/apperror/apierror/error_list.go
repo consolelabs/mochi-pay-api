@@ -7,3 +7,9 @@ var (
 	ErrTokenNotSupport     = New("token not supported", 400, "Transfer_004")
 	ErrInsufficientBalance = New("insufficient balance", 400, "Transfer_005")
 )
+
+var (
+	Code400 = "API_400"
+	Code404 = "API_404"
+	Code500 = "API_500"
+)
