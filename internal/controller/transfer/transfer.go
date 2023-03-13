@@ -1,8 +1,6 @@
 package transfer
 
 import (
-	"strconv"
-
 	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
@@ -10,6 +8,7 @@ import (
 	"github.com/consolelabs/mochi-pay-api/internal/apperror/apierror"
 	"github.com/consolelabs/mochi-pay-api/internal/appmain"
 	"github.com/consolelabs/mochi-pay-api/internal/model"
+	"github.com/consolelabs/mochi-pay-api/internal/utils"
 )
 
 type transfer struct {
@@ -28,23 +27,16 @@ func (t *transfer) TransferToken(req *model.TransferRequest) *apierror.ApiError 
 		listReceivers = append(listReceivers, to.ProfileGlobalId)
 	}
 
-	totalTransferAmount := 0.0
-	for _, amount := range req.Amount {
-		amount, _ := strconv.ParseFloat(amount, 64)
-		totalTransferAmount += amount
-	}
-
 	log := &model.TransferLog{
 		SenderProfileId:     req.From.ProfileGlobalId,
 		RecipientsProfileId: listReceivers,
 		NumberReceiver:      int64(len(listReceivers)),
-		Amount:              totalTransferAmount,
 		Status:              "failed",
 		Note:                apierror.ErrTokenNotSupport.Error(),
 	}
 
 	// check if token existed
-	token, err := t.params.DB().Token.GetBySymbol(req.Token.Symbol)
+	token, err := t.params.DB().Token.GetById(req.TokenId)
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
 			t.params.DB().TransferLog.CreateTransferLog(log)
@@ -53,6 +45,15 @@ func (t *transfer) TransferToken(req *model.TransferRequest) *apierror.ApiError 
 		t.params.Logger().WithFields(logrus.Fields{"req": req}).Error(err, "[transferController.TransferToken] - failed to get token")
 		return apierror.New(err.Error(), 500, apierror.Code500)
 	}
+
+	totalTransferAmount := 0.0
+	for _, amount := range req.Amount {
+		convertedAmountBigFloat := utils.ConvertBigIntString(amount, token)
+		convertedAmount, _ := convertedAmountBigFloat.Float64()
+		totalTransferAmount += convertedAmount
+	}
+
+	log.Amount = totalTransferAmount
 
 	// check sender's balance
 	senderBalance, err := t.params.DB().Balance.GetBalanceByTokenID(req.From.ProfileGlobalId, token.Id)
@@ -79,7 +80,7 @@ func (t *transfer) TransferToken(req *model.TransferRequest) *apierror.ApiError 
 	// execute transfer
 	batch := []model.Balance{{ProfileId: req.From.ProfileGlobalId, TokenId: token.Id, ChangedAmount: -totalTransferAmount}}
 	for idx, r := range req.Tos {
-		recipientAmount, _ := strconv.ParseFloat(req.Amount[idx], 64)
+		recipientAmount, _ := utils.ConvertBigIntString(req.Amount[idx], token).Float64()
 		batch = append(batch, model.Balance{
 			ProfileId:     r.ProfileGlobalId,
 			TokenId:       token.Id,

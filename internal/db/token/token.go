@@ -1,6 +1,7 @@
 package token
 
 import (
+	"github.com/google/uuid"
 	"gorm.io/gorm"
 
 	"github.com/consolelabs/mochi-pay-api/internal/model"
@@ -16,6 +17,7 @@ func New(db *gorm.DB) Store {
 	}
 }
 
-func (p *pg) GetBySymbol(symbol string) (token *model.Token, err error) {
-	return token, p.db.Where("symbol ILIKE ?", symbol).First(&token).Error
+func (p *pg) GetById(id string) (token *model.Token, err error) {
+	uuidTokenId, _ := uuid.Parse(id)
+	return token, p.db.Where("id = ?", uuidTokenId).First(&token).Error
 }

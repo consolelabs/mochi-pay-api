@@ -40,11 +40,11 @@ func (h *handler) Transfer(c *gin.Context) {
 	}
 
 	err := h.controller.Transfer.TransferToken(&model.TransferRequest{
-		From:   req.From,
-		Tos:    req.Tos,
-		Amount: req.Amount,
-		Token:  req.Token,
-		Note:   req.Note,
+		From:    req.From,
+		Tos:     req.Tos,
+		Amount:  req.Amount,
+		TokenId: req.TokenId,
+		Note:    req.Note,
 	})
 	if err != nil {
 		logger.Error(err, "[handler.Transfer] - failed to transfer token on controller level")

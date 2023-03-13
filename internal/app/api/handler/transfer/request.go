@@ -6,11 +6,12 @@ import (
 )
 
 type TransferRequest struct {
-	From   *model.Wallet   `json:"from"`
-	Tos    []*model.Wallet `json:"tos"`
-	Amount []string        `json:"amount"`
-	Token  *model.Token    `json:"token"`
-	Note   string          `json:"note"`
+	From    *model.Wallet   `json:"from"`
+	Tos     []*model.Wallet `json:"tos"`
+	Amount  []string        `json:"amount"`
+	TokenId string          `json:"token_id"`
+	// Token  *model.Token    `json:"token"`
+	Note string `json:"note"`
 }
 
 func (t *TransferRequest) Validate() error {
