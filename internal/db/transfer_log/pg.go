@@ -1,7 +1,7 @@
-package activitylog
+package transferlog
 
 import "github.com/consolelabs/mochi-pay-api/internal/model"
 
 type Store interface {
-	CreateActivityLog(al *model.ActivityLog) error
+	CreateTransferLog(al *model.TransferLog) error
 }

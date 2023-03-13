@@ -4,7 +4,6 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/k0kubun/pp"
 	"github.com/sirupsen/logrus"
 
 	"github.com/consolelabs/mochi-pay-api/internal/apperror/apierror"
@@ -48,19 +47,9 @@ func (h *handler) Transfer(c *gin.Context) {
 		Note:   req.Note,
 	})
 	if err != nil {
-		switch err.Error() {
-		case "token not supported":
-			pp.Println("in this case 1")
-			c.JSON(http.StatusBadRequest, apierror.New("token not supported", 400, apierror.Code400))
-			return
-		case "insufficient balance":
-			c.JSON(http.StatusBadRequest, apierror.New("insufficient balance", 400, apierror.Code400))
-			return
-		default:
-			logger.Error(err, "[handler.Transfer] - failed to transfer token on entities level")
-			c.JSON(http.StatusInternalServerError, apierror.New("Something went wrong", 500, apierror.Code500))
-			return
-		}
+		logger.Error(err, "[handler.Transfer] - failed to transfer token on controller level")
+		c.JSON(err.StatusCode(), apierror.New(err.Message(), err.StatusCode(), apierror.APICode(int64(err.StatusCode()))))
+		return
 	}
 
 	c.JSON(http.StatusOK, view.ToRespSuccess())

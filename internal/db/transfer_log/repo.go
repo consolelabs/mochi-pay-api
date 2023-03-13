@@ -1,4 +1,4 @@
-package activitylog
+package transferlog
 
 import (
 	"gorm.io/gorm"
@@ -16,6 +16,6 @@ func New(db *gorm.DB) Store {
 	}
 }
 
-func (p *pg) CreateActivityLog(al *model.ActivityLog) error {
+func (p *pg) CreateTransferLog(al *model.TransferLog) error {
 	return p.db.Create(al).Error
 }

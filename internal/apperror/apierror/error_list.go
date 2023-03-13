@@ -13,3 +13,16 @@ var (
 	Code404 = "API_404"
 	Code500 = "API_500"
 )
+
+func APICode(statusCode int64) string {
+	switch statusCode {
+	case 400:
+		return Code400
+	case 404:
+		return Code404
+	case 500:
+		return Code500
+	default:
+		return Code500
+	}
+}

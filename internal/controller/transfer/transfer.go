@@ -5,6 +5,7 @@ import (
 
 	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 
 	"github.com/consolelabs/mochi-pay-api/internal/apperror/apierror"
 	"github.com/consolelabs/mochi-pay-api/internal/appmain"
@@ -21,7 +22,7 @@ func New(p *appmain.Params) ITransfer {
 	}
 }
 
-func (t *transfer) TransferToken(req *model.TransferRequest) error {
+func (t *transfer) TransferToken(req *model.TransferRequest) *apierror.ApiError {
 	listReceivers := make([]string, 0)
 	for _, to := range req.Tos {
 		listReceivers = append(listReceivers, to.ProfileGlobalId)
@@ -33,24 +34,24 @@ func (t *transfer) TransferToken(req *model.TransferRequest) error {
 		totalTransferAmount += amount
 	}
 
-	log := &model.ActivityLog{
-		ProfileId:      req.From.ProfileGlobalId,
-		Receiver:       listReceivers,
-		NumberReceiver: int64(len(listReceivers)),
-		Amount:         totalTransferAmount,
-		Status:         "failed",
-		Note:           apierror.ErrTokenNotSupport.Error(),
+	log := &model.TransferLog{
+		SenderProfileId:     req.From.ProfileGlobalId,
+		RecipientsProfileId: listReceivers,
+		NumberReceiver:      int64(len(listReceivers)),
+		Amount:              totalTransferAmount,
+		Status:              "failed",
+		Note:                apierror.ErrTokenNotSupport.Error(),
 	}
 
 	// check if token existed
 	token, err := t.params.DB().Token.GetBySymbol(req.Token.Symbol)
 	if err != nil {
 		if err == gorm.ErrRecordNotFound {
-			t.params.DB().ActivityLog.CreateActivityLog(log)
+			t.params.DB().TransferLog.CreateTransferLog(log)
 			return apierror.ErrTokenNotSupport
 		}
 		t.params.Logger().WithFields(logrus.Fields{"req": req}).Error(err, "[transferController.TransferToken] - failed to get token")
-		return err
+		return apierror.New(err.Error(), 500, apierror.Code500)
 	}
 
 	// check sender's balance
@@ -60,18 +61,18 @@ func (t *transfer) TransferToken(req *model.TransferRequest) error {
 			insufficientLog := log
 			insufficientLog.Note = apierror.ErrInsufficientBalance.Error()
 			insufficientLog.TokenId = token.Id
-			t.params.DB().ActivityLog.CreateActivityLog(log)
+			t.params.DB().TransferLog.CreateTransferLog(log)
 			return apierror.ErrInsufficientBalance
 		}
 		t.params.Logger().WithFields(logrus.Fields{"req": req}).Error(err, "[transferController.TransferToken] - failed to get sender balance")
-		return err
+		return apierror.New(err.Error(), 500, apierror.Code500)
 	}
 
 	if float64(senderBalance.Amount) < totalTransferAmount {
 		insufficientLog := log
 		insufficientLog.Note = apierror.ErrInsufficientBalance.Error()
 		insufficientLog.TokenId = token.Id
-		t.params.DB().ActivityLog.CreateActivityLog(log)
+		t.params.DB().TransferLog.CreateTransferLog(log)
 		return apierror.ErrInsufficientBalance
 	}
 
@@ -87,17 +88,28 @@ func (t *transfer) TransferToken(req *model.TransferRequest) error {
 		})
 	}
 
-	err = t.params.DB().Balance.UpsertBatch(batch)
-	if err != nil {
-		t.params.Logger().WithFields(logrus.Fields{"req": req}).Error(err, "[transferController.TransferToken] - failed to upsert balance")
-		return err
+	tx, fn := t.params.DB().Store.NewTx()
+	for _, item := range batch {
+		tx.DB().Clauses(
+			clause.OnConflict{
+				Columns:   []clause.Column{{Name: "token_id"}, {Name: "profile_id"}},
+				DoUpdates: clause.Assignments(map[string]interface{}{"amount": gorm.Expr("balances.amount::decimal + ?", item.ChangedAmount)}),
+			},
+			clause.Returning{Columns: []clause.Column{{Name: "amount"}}},
+		).Create(&item)
 	}
+	err = fn.Commit()
+	if err != nil {
+		t.params.Logger().WithFields(logrus.Fields{"req": req}).Error(err, "[transferController.TransferToken] - failed to commit tx")
+		return apierror.New(err.Error(), 500, apierror.Code500)
+	}
+
 	log.Status = "success"
 	log.Note = "transfer success"
-	err = t.params.DB().ActivityLog.CreateActivityLog(log)
+	err = t.params.DB().TransferLog.CreateTransferLog(log)
 	if err != nil {
-		t.params.Logger().WithFields(logrus.Fields{"req": req}).Error(err, "[transferController.TransferToken] - failed to create activity log")
-		return err
+		t.params.Logger().WithFields(logrus.Fields{"req": req}).Error(err, "[transferController.TransferToken] - failed to create transfer log")
+		return apierror.New(err.Error(), 500, apierror.Code500)
 	}
 
 	return nil
