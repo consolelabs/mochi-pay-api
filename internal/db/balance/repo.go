@@ -27,7 +27,7 @@ func (p *pg) UpsertBatch(list []model.Balance) error {
 		err := tx.Clauses(
 			clause.OnConflict{
 				Columns:   []clause.Column{{Name: "token_id"}, {Name: "profile_id"}},
-				DoUpdates: clause.Assignments(map[string]interface{}{"amount": gorm.Expr("balance.amount + ?", item.ChangedAmount)}),
+				DoUpdates: clause.Assignments(map[string]interface{}{"amount": gorm.Expr("balances.amount + ?", item.ChangedAmount)}),
 			},
 			clause.Returning{Columns: []clause.Column{{Name: "amount"}}},
 		).Create(&item).Error

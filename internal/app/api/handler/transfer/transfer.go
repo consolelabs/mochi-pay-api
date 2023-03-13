@@ -4,11 +4,13 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/k0kubun/pp"
 	"github.com/sirupsen/logrus"
 
 	"github.com/consolelabs/mochi-pay-api/internal/apperror/apierror"
 	"github.com/consolelabs/mochi-pay-api/internal/controller"
 	"github.com/consolelabs/mochi-pay-api/internal/model"
+	"github.com/consolelabs/mochi-pay-api/internal/view"
 )
 
 type handler struct {
@@ -48,6 +50,7 @@ func (h *handler) Transfer(c *gin.Context) {
 	if err != nil {
 		switch err.Error() {
 		case "token not supported":
+			pp.Println("in this case 1")
 			c.JSON(http.StatusBadRequest, apierror.New("token not supported", 400, apierror.Code400))
 			return
 		case "insufficient balance":
@@ -60,5 +63,5 @@ func (h *handler) Transfer(c *gin.Context) {
 		}
 	}
 
-	c.JSON(http.StatusOK, gin.H{"data": "ok"})
+	c.JSON(http.StatusOK, view.ToRespSuccess())
 }
