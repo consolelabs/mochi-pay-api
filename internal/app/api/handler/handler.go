@@ -3,6 +3,7 @@ package handler
 import (
 	"github.com/consolelabs/mochi-pay-api/internal/app/api/handler/transfer"
 	"github.com/consolelabs/mochi-pay-api/internal/appmain"
+	"github.com/consolelabs/mochi-pay-api/internal/controller"
 )
 
 type Handler struct {
@@ -10,7 +11,8 @@ type Handler struct {
 }
 
 func New(p *appmain.Params) *Handler {
+	ctrl := controller.New(p)
 	return &Handler{
-		Transfer: transfer.New(),
+		Transfer: transfer.New(ctrl),
 	}
 }

@@ -10,6 +10,7 @@ import (
 	"github.com/sirupsen/logrus"
 
 	"github.com/consolelabs/mochi-pay-api/internal/config"
+	"github.com/consolelabs/mochi-pay-api/internal/db"
 	"github.com/consolelabs/mochi-pay-api/internal/logging"
 )
 
@@ -55,6 +56,12 @@ type Params struct {
 	config      config.View
 	logger      *logrus.Entry
 	serviceName string
+	db          *db.DB
+}
+
+// DB provides a database repository for the application.
+func (p *Params) DB() *db.DB {
+	return p.db
 }
 
 // Config provides the configuration for the application.
@@ -107,10 +114,13 @@ func newApplication(serviceName string, bindService Bind, getCfg func() (config.
 	}
 	logging.ConfigureLogging(cfg)
 
+	pgRepo := db.New(cfg, logger)
+
 	p := &Params{
 		config:      cfg,
 		logger:      logger,
 		serviceName: serviceName,
+		db:          pgRepo,
 	}
 	b := &Bindings{
 		a: a,
