@@ -3,10 +3,11 @@ package api
 import (
 	"strings"
 
-	"github.com/consolelabs/mochi-pay-api/internal/app/api/handler"
-	"github.com/consolelabs/mochi-pay-api/internal/appmain"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
+
+	"github.com/consolelabs/mochi-pay-api/internal/app/api/handler"
+	"github.com/consolelabs/mochi-pay-api/internal/appmain"
 )
 
 func setupRouter(p *appmain.Params, h *handler.Handler) *gin.Engine {
