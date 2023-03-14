@@ -23,7 +23,7 @@ func (r *FileReader) Load(v *viper.Viper) (*viper.Viper, error) {
 	filePath := fmt.Sprintf("%s/%s", r.dirname, r.filename)
 	err := godotenv.Load(filePath)
 	if err != nil {
-		return nil, err
+		return v, err
 	}
 	v.AutomaticEnv()
 	return v, nil
